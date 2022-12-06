@@ -1,13 +1,19 @@
+def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
+
+
 import subprocess
 from csv import writer, QUOTE_MINIMAL
 
+#test parameter
+frequencyRange = [800, 900, 1000, 1100, 1200, 1300, 1400, 1500]
+
 def init_config(freq):
-    with open('gem5/configs/simulation_parameters.py', 'r', encoding='utf-8') as file:
+    with open('/home/eca/gem5/configs/simulation_parameters.py', 'r', encoding='utf-8') as file:
         data = file.readlines()
     #print(data)    
     data[2] = f"frequency = {freq}  # CPU clock frequency [MHz]\n"    
     #print(data)    
-    with open('gem5/configs/simulation_parameters.py', 'w', encoding='utf-8') as file:
+    with open('/home/eca/gem5/configs/simulation_parameters.py', 'w', encoding='utf-8') as file:
         file.writelines(data)    
 
 def process_output(output):
@@ -28,7 +34,7 @@ def write_out(result, names):
     #Obtain variable settings. 
     #Append data to csv
     #Step 1. Generate list
-    with open('gem5/configs/simulation_parameters.py', 'r', encoding='utf-8') as file:
+    with open('/home/eca/gem5/configs/simulation_parameters.py', 'r', encoding='utf-8') as file:
         data = file.readlines()
     #print("\n", data)
     temp = []
@@ -42,26 +48,33 @@ def write_out(result, names):
     #print(names)
 
 
-    with open('results.csv', 'a', newline='') as csvfile:
+    with open('/home/eca/results.csv', 'a', newline='') as csvfile:
         spamwriter = writer(csvfile)#, delimiter=' ', quotechar = '|', quoting=QUOTE_MINIMAL)
         spamwriter.writerow(l)
 
 def main():
-    for i in range(700, 1201, 100):
+    for i in frequencyRange:
     #i = 700
     #if(True):    
     #Step 1: Edit /home/eca/gem5/configs/simulation_parameters.py change frequency value
+        prGreen("Running frequency " + str(i))
         init_config(i)
     #Step 2: Start simulation
-        output = subprocess.run(["make", "simulate"], cwd="benchmark")
+        prGreen("Running simulation")
+        output = subprocess.run(["make", "simulate"], cwd="/home/eca/benchmark")
     #Step 3: Read and process output
-        output = subprocess.run(["./extract_stats.sh"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)#, capture_output=True)
+        prGreen("Processing data")
+        output = subprocess.run(["/home/eca/extract_stats.sh"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)#, capture_output=True)
         result = output.stdout.decode("utf-8")
-        
+        #prGreen(result)
         result, names = process_output(result)    
     #Step 4: Write output to cvs
+        prGreen("Writing it to csv")
         write_out(result, names)
-    print("Finished")
+    
+    #Step 5:
+        output = subprocess.run(["cp", "lincoln_out.bmp", "licoln_out_" + str(i) +".bmp"], cwd="/home/eca/benchmark/results")
+    prGreen("Finished")
 
 
 if __name__ == "__main__":
