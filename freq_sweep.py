@@ -3,6 +3,7 @@ def prGreen(skk): print("\033[92m {}\033[00m" .format(skk))
 
 import subprocess
 from csv import writer, QUOTE_MINIMAL
+from os.path import exists
 
 #test parameter
 frequencyRange = [800, 900, 1000, 1100, 1200, 1300, 1400, 1500]
@@ -41,12 +42,19 @@ def write_out(result, names):
     for i, x in enumerate(data):
         data[i] = x.split()
     #print(data)
+
     l = [data[1][2], data[2][2], data[6][2], data[7][2], data[8][2], data[12][2], data[13][2], data[14][2], data[18][2], data[19][2], data[20][2], data[21][2], data[22][2]]
     #for i, x in enumerate(result):
     #    result[i] = str(x)    
     l.extend(result)    
     #print(names)
 
+    if not exists("/home/eca/results.csv"):
+        arguments = ["Core","Freq","L1d_size","L1d_assoc","L1d_mem","L1i_size","L1i_assoc","L1i_mem","l2_e","L2_pref","L2_size","L2_assoc","L2_mem"]
+        arguments.extend(names)
+        with open('/home/eca/results.csv', 'a', newline='') as csvfile:
+            spamwriter = writer(csvfile)
+            spamwriter.writerow(arguments)
 
     with open('/home/eca/results.csv', 'a', newline='') as csvfile:
         spamwriter = writer(csvfile)#, delimiter=' ', quotechar = '|', quoting=QUOTE_MINIMAL)
@@ -61,7 +69,7 @@ def main():
         init_config(i)
     #Step 2: Start simulation
         prGreen("Running simulation")
-        output = subprocess.run(["make", "simulate"], cwd="/home/eca/benchmark")
+        #output = subprocess.run(["make", "simulate"], cwd="/home/eca/benchmark")
     #Step 3: Read and process output
         prGreen("Processing data")
         output = subprocess.run(["/home/eca/extract_stats.sh"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)#, capture_output=True)
