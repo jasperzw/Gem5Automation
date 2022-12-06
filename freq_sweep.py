@@ -6,13 +6,19 @@ from csv import writer, QUOTE_MINIMAL
 from os.path import exists
 
 #test parameter
-frequencyRange = [800, 900, 1000, 1100, 1200, 1300, 1400, 1500]
+frequencyRange = [800, 1100, 1500]
+archSet = ["A15","A7"]
+l1Set = ["hp","lop"]
 
-def init_config(freq):
+def init_config(freq, Arch, Cache):
     with open('/home/eca/gem5/configs/simulation_parameters.py', 'r', encoding='utf-8') as file:
         data = file.readlines()
-    #print(data)    
-    data[2] = f"frequency = {freq}  # CPU clock frequency [MHz]\n"    
+    data[8] = f'l1d_memory_type = "{Cache}"  # Memory cell type ("lop", "lstp" or "hp")\n'
+    data[14] = f'l1i_memory_type = "{Cache}"  # Memory cell type ("lop", "lstp" or "hp")\n'
+    data[22] = f'l2_memory_type = "{Cache}"  # Memory cell type ("lop", "lstp" or "hp")\n'
+    data[1] = f"core = '{Arch}'  # Choose 'A15' (big) or 'A7' (LITTLE)\n"
+    data[2] = f"frequency = {freq}  # CPU clock frequency [MHz]\n"
+
     #print(data)    
     with open('/home/eca/gem5/configs/simulation_parameters.py', 'w', encoding='utf-8') as file:
         file.writelines(data)    
@@ -62,27 +68,27 @@ def write_out(result, names):
 
 def main():
     for i in frequencyRange:
-    #i = 700
-    #if(True):    
-    #Step 1: Edit /home/eca/gem5/configs/simulation_parameters.py change frequency value
-        prGreen("Running frequency " + str(i))
-        init_config(i)
-    #Step 2: Start simulation
-        prGreen("Running simulation")
-        #output = subprocess.run(["make", "simulate"], cwd="/home/eca/benchmark")
-    #Step 3: Read and process output
-        prGreen("Processing data")
-        output = subprocess.run(["/home/eca/extract_stats.sh"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)#, capture_output=True)
-        result = output.stdout.decode("utf-8")
-        #prGreen(result)
-        result, names = process_output(result)    
-    #Step 4: Write output to cvs
-        prGreen("Writing it to csv")
-        write_out(result, names)
-    
-    #Step 5:
-        output = subprocess.run(["cp", "lincoln_out.bmp", "licoln_out_" + str(i) +".bmp"], cwd="/home/eca/benchmark/results")
-    prGreen("Finished")
+        for j in archSet:
+            for h in l1Set:  
+            #Step 1: Edit /home/eca/gem5/configs/simulation_parameters.py change frequency value
+                prGreen("Running freq: " + str(i) +", Core:" + j + ", Cache: "+h)
+                init_config(i,j,h)
+            #Step 2: Start simulation
+                prGreen("Running simulation")
+                output = subprocess.run(["make", "simulate"], cwd="/home/eca/benchmark")
+            #Step 3: Read and process output
+                prGreen("Processing data")
+                output = subprocess.run(["/home/eca/extract_stats.sh"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)#, capture_output=True)
+                result = output.stdout.decode("utf-8")
+                #prGreen(result)
+                result, names = process_output(result)    
+            #Step 4: Write output to cvs
+                prGreen("Writing it to csv")
+                write_out(result, names)
+            
+            #Step 5:
+                output = subprocess.run(["cp", "lincoln_out.bmp", "licoln_out_" + str(i) +".bmp"], cwd="/home/eca/benchmark/results")
+            prGreen("Finished")
 
 
 if __name__ == "__main__":
